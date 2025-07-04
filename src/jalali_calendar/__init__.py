@@ -9,6 +9,8 @@ from .converter import (
 
 __all__ = [
     'JalaliDate',
+    'PERSIAN_MONTH_NAMES',
+    'PERSIAN_WEEKDAY_NAMES',
     'gregorian_to_jalali',
     'jalali_to_gregorian',
     'is_jalali_leap',
