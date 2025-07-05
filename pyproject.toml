@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "persian-jalali-calendar"
 dynamic = ["version"]
-authors = [ { name="Hamid R. Yari", email="hryarih32@gmail.com" } ]
+authors = [ { name="Hamid R. Yari", email="hryarih@gmail.com" } ]
 description = "A simple and accurate Python library for the Persian Jalali calendar with no external dependencies."
 readme = "README.md"
 license = { file="LICENSE" }
