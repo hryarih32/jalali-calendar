@@ -5,7 +5,7 @@ from .date import JalaliDate, PERSIAN_MONTH_NAMES
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
-    from backports.zoneinfo import ZoneInfo
+    from backports.zoneinfo import ZoneInfo  # type: ignore
 
 
 class JalaliDateTime:
@@ -13,9 +13,11 @@ class JalaliDateTime:
     An object representing a specific point in time (date and time)
     in the Jalali calendar. Can be 'aware' or 'naive' of timezones.
     """
+
     def __init__(self, year, month, day, hour=0, minute=0, second=0, tzinfo=None):
         self._date = JalaliDate(year, month, day)
-        if not (0 <= hour <= 23 and 0 <= minute <= 59 and 0 <= second <= 59):
+        if not (0 <= hour <= 23 and 0 <= minute <= 59 and
+                0 <= second <= 59):
             raise ValueError("Time component is out of range.")
         if tzinfo is not None and not isinstance(tzinfo, datetime.tzinfo):
             raise TypeError("tzinfo argument must be a tzinfo subclass.")
@@ -23,19 +25,32 @@ class JalaliDateTime:
         self._tzinfo = tzinfo
 
     @property
-    def year(self): return self._date.year
+    def year(self):
+        return self._date.year
+
     @property
-    def month(self): return self._date.month
+    def month(self):
+        return self._date.month
+
     @property
-    def day(self): return self._date.day
+    def day(self):
+        return self._date.day
+
     @property
-    def hour(self): return self._time.hour
+    def hour(self):
+        return self._time.hour
+
     @property
-    def minute(self): return self._time.minute
+    def minute(self):
+        return self._time.minute
+
     @property
-    def second(self): return self._time.second
+    def second(self):
+        return self._time.second
+
     @property
-    def tzinfo(self): return self._tzinfo
+    def tzinfo(self):
+        return self._tzinfo
 
     def date(self) -> JalaliDate:
         return self._date
@@ -46,50 +61,43 @@ class JalaliDateTime:
     def to_12h(self) -> tuple[int, str]:
         h = self.hour
         period = "ب.ظ" if 12 <= h < 24 else "ق.ظ"
-        if h == 0:
+        h12 = h % 12
+        if h12 == 0:
             h12 = 12
-        elif 1 <= h <= 12:
-            h12 = h
-        else:
-            h12 = h - 12
         return h12, period
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         if self._tzinfo:
-            return (
-                f"JalaliDateTime({self.year}, {self.month}, {self.day}, "
-                f"{self.hour}, {self.minute}, {self.second}, tzinfo={self._tzinfo!r})"
-            )
-        return (
-            f"JalaliDateTime({self.year}, {self.month}, {self.day}, "
-            f"{self.hour}, {self.minute}, {self.second})"
-        )
+            return (f"JalaliDateTime({self.year}, {self.month}, {self.day}, "
+                    f"{self.hour}, {self.minute}, {self.second}, "
+                    f"tzinfo={self._tzinfo!r})")
+        return (f"JalaliDateTime({self.year}, {self.month}, {self.day}, "
+                f"{self.hour}, {self.minute}, {self.second})")
 
-    def __str__(self) -> str:
+    def __str__(self):
         s = f"{self._date} {self._time}"
         if self._tzinfo:
             g_dt = self.to_gregorian()
-            tz_str = g_dt.strftime('%Z')
-            if tz_str:
-                s += ' ' + tz_str
+            tzname = self._tzinfo.tzname(g_dt)
+            if tzname:
+                s += ' ' + tzname
         return s
 
     def strftime(self, fmt: str) -> str:
         date_formatted = self._date.strftime(fmt)
         h12, period = self.to_12h()
-        time_formatted = date_formatted.replace('%H', f"{self.hour:02d}") \
-                                       .replace('%M', f"{self.minute:02d}") \
-                                       .replace('%S', f"{self.second:02d}") \
-                                       .replace('%I', f"{h12:02d}") \
-                                       .replace('%p', period)
-        
+        time_formatted = (
+            date_formatted.replace('%H', f"{self.hour:02d}")
+            .replace('%M', f"{self.minute:02d}")
+            .replace('%S', f"{self.second:02d}")
+            .replace('%I', f"{h12:02d}")
+            .replace('%p', period)
+        )
         if self._tzinfo and ('%z' in fmt or '%Z' in fmt):
             g_dt = self.to_gregorian()
             time_formatted = time_formatted.replace('%z', g_dt.strftime('%z'))
             time_formatted = time_formatted.replace('%Z', g_dt.strftime('%Z'))
-            
         return time_formatted
-
 
     @classmethod
     def now(cls, tz=None):
@@ -105,10 +113,12 @@ class JalaliDateTime:
     def combine(cls, date: JalaliDate, time: datetime.time, tzinfo=None):
         if not isinstance(date, JalaliDate) or not isinstance(time, datetime.time):
             raise TypeError("Invalid types for date or time.")
-        return cls(date.year, date.month, date.day, time.hour, time.minute, time.second, tzinfo=tzinfo)
+        return cls(date.year, date.month, date.day, time.hour,
+                   time.minute, time.second, tzinfo=tzinfo)
 
     @classmethod
-    def from_12h(cls, date: JalaliDate, hour: int, minute: int, second: int, period: str, tzinfo=None):
+    def from_12h(cls, date: JalaliDate, hour: int, minute: int, second: int,
+                 period: str, tzinfo=None):
         if not (1 <= hour <= 12):
             raise ValueError("Hour must be between 1 and 12 for 12-hour format.")
         if period not in ("ق.ظ", "ب.ظ"):
@@ -123,10 +133,8 @@ class JalaliDateTime:
 
     def to_gregorian(self) -> datetime.datetime:
         g_year, g_month, g_day = self._date.to_gregorian().timetuple()[:3]
-        return datetime.datetime(
-            g_year, g_month, g_day, self.hour,
-            self.minute, self.second, tzinfo=self._tzinfo
-        )
+        return datetime.datetime(g_year, g_month, g_day, self.hour,
+                                 self.minute, self.second, tzinfo=self._tzinfo)
 
     def astimezone(self, tz=None):
         if self._tzinfo is None:
@@ -148,8 +156,9 @@ class JalaliDateTime:
             '%p': r'(?P<p>[\u0600-\u06FF\.]+|[APM\.]{2,})',
         }
         date_format_map = {
-            '%Y': r'(?P<Y>\d{4})', '%y': r'(?P<y>\d{2})', '%m': r'(?P<m>\d{1,2})',
-            '%-m': r'(?P<m>\d{1,2})', '%d': r'(?P<d>\d{1,2})', '%-d': r'(?P<d>\d{1,2})',
+            '%Y': r'(?P<Y>\d{4})', '%y': r'(?P<y>\d{2})',
+            '%m': r'(?P<m>\d{1,2})', '%-m': r'(?P<m>\d{1,2})',
+            '%d': r'(?P<d>\d{1,2})', '%-d': r'(?P<d>\d{1,2})',
             '%B': r'(?P<B>[\u0600-\u06FF\s]+)',
         }
         full_format_map = {**date_format_map, **format_map}
@@ -159,7 +168,9 @@ class JalaliDateTime:
 
         match = re.match(pattern, datetime_string)
         if not match:
-            raise ValueError(f"Datetime string '{datetime_string}' does not match format '{fmt}'")
+            raise ValueError(
+                f"Datetime string '{datetime_string}' does not match format '{fmt}'"
+            )
 
         data = match.groupdict()
         year = int(data.get('Y') or f"13{data.get('y')}")
@@ -170,18 +181,58 @@ class JalaliDateTime:
         else:
             month_name = data.get('B').strip()
             month = PERSIAN_MONTH_NAMES.index(month_name)
-
+        
         hour_24 = data.get('H')
         hour_12 = data.get('I')
         minute = int(data.get('M', 0))
         second = int(data.get('S', 0))
-        period = (data.get('p') or '').strip().replace('.', '')
+        period = (data.get('p') or '').strip().replace('.','')
+
         if hour_12:
             hour = int(hour_12)
-            if (period in ('بظ', 'PM')) and hour != 12:
-                hour += 12
-            elif (period in ('قظ', 'AM')) and hour == 12:
-                hour = 0
+            if (period in ('بظ', 'PM')) and hour != 12: hour += 12
+            elif (period in ('قظ', 'AM')) and hour == 12: hour = 0
         else:
             hour = int(hour_24 or 0)
         return cls(year, month, day, hour, minute, second)
+
+    def __eq__(self, other):
+        if not isinstance(other, JalaliDateTime):
+            return NotImplemented
+        
+        t1_aware = self.tzinfo is not None
+        t2_aware = other.tzinfo is not None
+        if t1_aware != t2_aware:
+            return False
+            
+        if t1_aware and t2_aware:
+            return self.astimezone(ZoneInfo("UTC")) == other.astimezone(ZoneInfo("UTC"))
+
+        return (self._date == other._date and self._time == other._time)
+
+    def __ne__(self, other):
+        eq_result = self.__eq__(other)
+        return NotImplemented if eq_result is NotImplemented else not eq_result
+        
+    def _compare(self, other, op):
+        if not isinstance(other, JalaliDateTime):
+            return NotImplemented
+        
+        if (self.tzinfo is None) != (other.tzinfo is None):
+            raise TypeError("can't compare offset-naive and offset-aware datetimes")
+            
+        t1 = self.to_gregorian().timestamp()
+        t2 = other.to_gregorian().timestamp()
+        return op(t1, t2)
+
+    def __lt__(self, other):
+        return self._compare(other, lambda a, b: a < b)
+
+    def __le__(self, other):
+        return self._compare(other, lambda a, b: a <= b)
+
+    def __gt__(self, other):
+        return self._compare(other, lambda a, b: a > b)
+
+    def __ge__(self, other):
+        return self._compare(other, lambda a, b: a >= b)

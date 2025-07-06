@@ -8,8 +8,7 @@ from .converter import (
 )
 from .__version__ import __version__
 
-PERSIAN_MONTH_NAMES = JalaliDate.PERSIAN_MONTH_NAMES
-PERSIAN_WEEKDAY_NAMES = JalaliDate.PERSIAN_WEEKDAY_NAMES
+from .date import PERSIAN_MONTH_NAMES, PERSIAN_WEEKDAY_NAMES
 
 __all__ = [
     'JalaliDate',

@@ -11,19 +11,13 @@ PERSIAN_WEEKDAY_NAMES = [
     "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"
 ]
 
+
 class JalaliDate:
-    """
-    An object representing a single date (year, month, day) in the Jalali calendar.
-    """
+    """An object representing a single date (year, month, day) in the Jalali calendar."""
 
     def __init__(self, year: int, month: int, day: int):
-        """
-        Creates a JalaliDate object.
-        
-        Raises:
-            ValueError: If the date components are invalid.
-        """
-        if not (isinstance(year, int) and isinstance(month, int) and isinstance(day, int)):
+        if not (isinstance(year, int) and isinstance(month, int) and
+                isinstance(day, int)):
             raise TypeError("year, month, and day must be integers.")
 
         if month < 1 or month > 12:
@@ -34,7 +28,9 @@ class JalaliDate:
             days_in_month = 30
 
         if day < 1 or day > days_in_month:
-            raise ValueError(f"Day is out of range for month {month} in year {year}.")
+            raise ValueError(
+                f"Day is out of range for month {month} in year {year}."
+            )
 
         self._year = year
         self._month = month
@@ -52,10 +48,10 @@ class JalaliDate:
     def day(self) -> int:
         return self._day
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return f"JalaliDate({self._year}, {self._month}, {self._day})"
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"{self._year:04d}-{self._month:02d}-{self._day:02d}"
 
     @classmethod
@@ -141,7 +137,9 @@ class JalaliDate:
             j_year, j_month, j_day = converter.jdn_to_jalali(jdn)
             return JalaliDate(j_year, j_month, j_day)
         if isinstance(other, JalaliDate):
-            return datetime.timedelta(days=self._to_ordinal() - other._to_ordinal())
+            return datetime.timedelta(
+                days=self._to_ordinal() - other._to_ordinal()
+            )
         return NotImplemented
 
     def strftime(self, fmt: str) -> str:
@@ -170,7 +168,7 @@ class JalaliDate:
         first_day_of_year = JalaliDate(self._year, 1, 1)
         first_day_weekday = first_day_of_year.weekday()
         return ((doy + first_day_weekday - 1) // 7) + 1
-        
+
     @classmethod
     def strptime(cls, date_string: str, fmt: str):
         format_map = {
@@ -188,8 +186,9 @@ class JalaliDate:
 
         match = re.match(pattern, date_string)
         if not match:
-            raise ValueError(f"Date string '{date_string}' does not match format '{fmt}'")
-
+            raise ValueError(
+                f"Date string '{date_string}' does not match format '{fmt}'"
+            )
         data = match.groupdict()
         year = int(data.get('Y') or f"13{data.get('y')}")
         day = int(data.get('d'))
@@ -205,33 +204,20 @@ class JalaliDate:
         return cls(year, month, day)
 
     def add_months(self, months_to_add: int):
-        """
-        Returns a new JalaliDate object with the given number of months added.
-        Handles year rollovers and clamps the day to the maximum for the target month.
-        """
         total_months = self._month + months_to_add
-        
         year_delta, new_month = divmod(total_months - 1, 12)
         new_year = self._year + year_delta
         new_month += 1
-        
         days_in_new_month = JALALI_MONTH_DAYS[new_month]
         if new_month == 12 and converter.is_jalali_leap(new_year):
             days_in_new_month = 30
-            
         new_day = min(self._day, days_in_new_month)
-        
         return JalaliDate(new_year, new_month, new_day)
 
     def add_years(self, years_to_add: int):
-        """
-        Returns a new JalaliDate object with the given number of years added.
-        Handles the leap day case (e.g., Feb 29).
-        """
         new_year = self._year + years_to_add
-        
         new_day = self._day
-        if self._month == 12 and self._day == 30 and not converter.is_jalali_leap(new_year):
+        if (self._month == 12 and self._day == 30 and
+                not converter.is_jalali_leap(new_year)):
             new_day = 29
-            
         return JalaliDate(new_year, self._month, new_day)
